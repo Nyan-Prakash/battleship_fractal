@@ -7,16 +7,18 @@ import {emptyOcean, emptyPlayer, type GameState, initialGameState, type Board, p
 
 function Game() {
 
+    type ShootRequest = { row: number; col: number; id: number };
+
   const [gameState, setGameState] = useState<GameState>(initialGameState);
   const [connect, setConnected] = useState(false);
   const [waitingConnect, setWaitingConnection] = useState(false);
 
   const [player, setPlayer] = useState<Player>(emptyPlayer);
   
+  const [finishedplacing, setFinishedPlacing] = useState(false);
   const [ocean, setOcean] = useState<Board>(emptyOcean);
   const [rotate, setRotate] = useState(false);
 
-  const [numberships, setnumberShips] = useState(5);
 
 
   const [name, setName] = useState<string>('');
@@ -31,10 +33,11 @@ function Game() {
     }
 
     async function finishedPlacing(): Promise<void> {
-        await fetch('/finishedPlacing', {
+            await fetch('/finishedPlacing', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
         });
+
         }
     
 
@@ -58,6 +61,32 @@ function Game() {
             },
         })
     }
+
+    async function handleShoot(ri: number, ci: number) {
+        if (player?.ID === undefined && gameState.currentPlayer != player.ID) {
+            console.warn("No player ID yet; can’t shoot.");
+            return;
+        }
+        try {
+            const result = await shooting({ row: ri, col: ci, id: player.ID });
+            console.log("Shot result:", result);
+        } catch (err) {
+            console.error(err);
+            alert("Shot failed. Check server logs and network tab.");
+        }
+        }
+    async function shooting(params: ShootRequest): Promise<void> {
+        const res = await fetch("/Shooting", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(params),
+        });
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`Shooting failed (${res.status}): ${text}`);
+        }
+        return res.json();
+}
 
 
     async function submitGame(params: { name: string, code: number }) {
@@ -87,7 +116,7 @@ function Game() {
     useEffect(() => {
     const interval = setInterval(() => {
         getGame();
-    }, 2000); // 500ms = 0.5s
+    }, 100); // 500ms = 0.5s
 
     return () => clearInterval(interval); // cleanup
     }, []);
@@ -100,27 +129,33 @@ const OnHandleSelfClick = async (x: number, y: number) => {
     console.log("OnHandleSelfClick") 
   // bounds checks
   if (!rotate) {
-    if (numberships + y > 10) return;
-    for (let i = 0; i < numberships; i++) {
+    if (player.ID === undefined || !gameState.players[player.ID]) return;
+    if (gameState.players[player.ID].placedCount + y > 10) return;
+    for (let i = 0; i < gameState.players[player.ID].placedCount; i++) {
       // fire and forget (see variant below for awaiting)
       mutation.mutate({ row: x, col: y + i });
     }
   } else {
-    if (numberships + x > 10) return;
-    for (let i = 0; i < numberships; i++) {
+    if (player.ID === undefined || !gameState.players[player.ID]) return;
+    if (gameState.players[player.ID].placedCount + x > 10) return;
+    for (let i = 0; i < gameState.players[player.ID].placedCount; i++) {
       mutation.mutate({ row: x + i, col: y });
     }
   }
 
-  const next = numberships - 1;
-  setnumberShips(next);         // ← only once
-  await updatedPlaceCount();    // optional: await if server tracks it
+  let next = 0;
+  if (player.ID !== undefined && gameState.players[player.ID]) {
+    next = gameState.players[player.ID].placedCount - 1;
+    await updatedPlaceCount();    // optional: await if server tracks it
 
-  console.log(next)
-  if (next <= 0) {
-    console.log("Finishign placing")
-    await finishedPlacing();    // ← now valid (async fn)
-}
+    console.log(next)
+    if (next == 1) {
+    
+      console.log("Finishing placing")
+
+      await finishedPlacing();    // ← now valid (async fn)
+    }
+  }
 };
 
 
@@ -150,8 +185,9 @@ const OnHandleSelfClick = async (x: number, y: number) => {
   return (
     <>
       <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-blue-900 via-blue-700 to-blue-400 flex flex-col gap-1 items-center justify-center">
-  <h1 className="text-6xl text-white mb-6 absolute top-3">BattleShip 🚢 {numberships}</h1>
-  <div>{JSON.stringify(gameState)}</div>
+  <h1 className="text-6xl text-white mb-6 absolute top-3">
+    BattleShip 🚢
+  </h1>
   <h3 className="text-lg font-normal text-white mb-6 absolute top-20 italic">By Nyan Prakash</h3>
   <div className="flex flex-col items-end absolute top-3 right-3 gap-2">
 
@@ -179,7 +215,7 @@ const OnHandleSelfClick = async (x: number, y: number) => {
   <div className={`flex ${rotate ? "flex-col" : "flex-row"} gap-1 ml-2 absolute top-30 left-50`}>
 
     {player.ID !== undefined && gameState.players[player.ID] &&
-      Array.from({length: numberships}, (_,i) => (
+      Array.from({length: gameState.players[player.ID].placedCount}, (_,i) => (
         <button
         key={i}
         className={`w-8 h-8 bg-white text-white rounded-xl animate-pulse  ${i === 0 ? "border-5 border-blue-950 bg-blue-950" : "bg-white"}`}
@@ -203,11 +239,15 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                         <button
                             key={ci}
                             className={`w-8 h-8 text-white rounded-xl ${
-                                cell === player.ID ? "bg-white" : "bg-blue-950"
+                                cell === player.ID
+                                    ? "bg-white"
+                                    : cell === "Hit"
+                                    ? "bg-orange-500"
+                                    : "bg-blue-950"
                             }`}
                             onClick={() => OnHandleSelfClick(ri, ci)}
                         >
-                            {player.ID}
+                            {cell === player.ID ? player.ID : cell === "Hit" ? "" : ""}
                         </button>
                     ))}
                 </div>
@@ -243,14 +283,14 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                 {gameState.state !== "Normal" ?
 
                 <div className='text-white'>
-                    {numberships > 0
-                        ? `Place your ${numberships} ships`
+                    {player.ID !== undefined && gameState.players[player.ID]?.placedCount > 0
+                        ? `Place your ${gameState.players[player.ID]?.placedCount} ships`
                         : "All ships placed!"}
                 </div>
 
 
                     : <div className='text-white'>
-                    {player.ID !== undefined && gameState.currentPlayer?.ID == player.ID ? "Your turn!" : "It's your enemies turn!"}
+                    {player.ID !== undefined && gameState.currentPlayer == player.ID ? "Your turn!" : "It's your enemies turn!"}
                         
                 </div>}
             </div>
@@ -278,7 +318,22 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                     {row.map((cell, ci) => (
                         <button
                             key={ci}
-                            className="w-8 h-8 bg-gray-600 opacity-60 text-white rounded-xl"
+                            onClick={() => {
+                                if (gameState.currentPlayer === player.ID) {
+                                    handleShoot(ri, ci);
+                                } else {
+                                    console.log("nope");
+                                }
+                            }}
+                            className={`w-8 h-8 ${
+                                gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Miss"
+                                    ? "bg-gray-200"
+                                    : gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Hit"
+                                    ? "bg-red-800"
+                                    : gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Air"
+                                    ? "bg-blue-900"
+                                    : "bg-blue-900"
+                            } opacity-60 text-white rounded-xl`}
                         >
                             {waitingConnect ? "?" : ""}
                         </button>

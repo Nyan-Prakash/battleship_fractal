@@ -1,6 +1,6 @@
 import express from "express";
 import ViteExpress from "vite-express";
-import { emptyPlayer, initialGameState, placeBoat, type GameState } from "../src/logic.ts";
+import { emptyPlayer, hit, initialGameState, placeBoat, type GameState } from "../src/logic.ts";
 
 const app = express();
 app.use(express.json())
@@ -39,17 +39,28 @@ app.post("/placeboat/:id", (req: Request, res: Response) => {
     const moveReq = req.body as MoveRequest;
     const playerId = parseInt(req.params.id);
     gameState = placeBoat(moveReq.row, moveReq.col, playerId, gameState);
-    res.json(gameState);
+    return res.json(gameState);
 });
 
-app.post("/finishedPlacing", (req, Request, res: Request) => {
+app.post("/Shooting", (req: Request, res: Response) => {
+  const { row, col, id } = req.body as { row: number; col: number; id: number };
+  const playerId = parseInt(id.toString());
+
+  gameState = hit(row, col, playerId, gameState);
+  return res.json(gameState);
+});
+
+
+app.post("/finishedPlacing", (req: Request, res: Request) => {
   gameState.playersPlaced += 1;
 
   if(gameState.playersPlaced == 2)
   {
     gameState.state = "Normal";
-    gameState.currentPlayer = gameState.players[0];
+    gameState.currentPlayer = gameState.players[0].ID;
   }
+  return res.json({ message: "yes" });
+
 });
 
 

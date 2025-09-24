@@ -4,7 +4,7 @@ export type Player = {
     placedCount: number;
 };
 
-export type Cell = Number | "Air";
+export type Cell = Number | "Air" | "Miss" | "Hit";
 
 export type Ocean = Cell[][];
 
@@ -16,7 +16,7 @@ export type GameState = {
     board: Board;
     code: number
     players: Player[];
-    currentPlayer: Player | undefined;
+    currentPlayer: number | undefined;
     winner: Player | undefined;
     state: "Placing" | "Normal" | "Waiting";
     playersPlaced: number;
@@ -46,8 +46,6 @@ export const initialGameState: GameState = {
     state: "Waiting",
 
     
-
-
 };
 
 export function placeBoat(x: number, y: number, ID: number, gameState: GameState): GameState {
@@ -58,6 +56,30 @@ export function placeBoat(x: number, y: number, ID: number, gameState: GameState
 
     if (newGameState.board.oceans[ID][x][y] === "Air") {
         newGameState.board.oceans[ID][x][y] = ID;
+        return newGameState;
+    }
+
+    return gameState;
+}
+
+export function hit(x: number, y: number, ID: number, gameState: GameState): GameState {
+    if (ID === undefined || ID < 0 || ID > 1) {
+        return gameState;
+    }
+
+    let otherID = (ID == 0 ? 1 : 0)
+    const newGameState: GameState = structuredClone(gameState);
+    newGameState.currentPlayer = otherID;
+    if (newGameState.currentPlayer) {
+        newGameState.currentPlayer = otherID;
+    }
+
+    if (newGameState.board.oceans[otherID][x][y] === "Air") {
+        newGameState.board.oceans[otherID][x][y] = "Miss";
+        return newGameState;
+    }
+    if (typeof newGameState.board.oceans[otherID][x][y] === "number") {
+        newGameState.board.oceans[otherID][x][y] = "Hit";
         return newGameState;
     }
 
