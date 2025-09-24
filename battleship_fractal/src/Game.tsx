@@ -31,13 +31,11 @@ function Game() {
     }
 
     async function finishedPlacing(): Promise<void> {
-        const res = await fetch(`finishedPlacing`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-        })
-    }
+        await fetch('/finishedPlacing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        });
+        }
     
 
     async function placingBoat(params: { row: number, col: number }) {
@@ -52,7 +50,8 @@ function Game() {
     }
 
     async function updatedPlaceCount() {
-        const res = await fetch(`/updatedPlaceCount/${player.ID}`, {
+        console.log("updatedPlaceCount")
+        return await fetch(`/updatedPlaceCount/${player.ID}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -88,7 +87,7 @@ function Game() {
     useEffect(() => {
     const interval = setInterval(() => {
         getGame();
-    }, 1000); // 500ms = 0.5s
+    }, 2000); // 500ms = 0.5s
 
     return () => clearInterval(interval); // cleanup
     }, []);
@@ -96,37 +95,33 @@ function Game() {
 
 
   
-  const OnHandleSelfClick = (x: number, y:number) => {
-    let newGameState = structuredClone(gameState);
-    if(!rotate)
-    {
-      if(numberships + y > 10)
-      {
-        return;
-      }
-      for(let i = 0; i < numberships; i++) {
-        mutation.mutate({ row: x, col: y+i })
 
+const OnHandleSelfClick = async (x: number, y: number) => { 
+    console.log("OnHandleSelfClick") 
+  // bounds checks
+  if (!rotate) {
+    if (numberships + y > 10) return;
+    for (let i = 0; i < numberships; i++) {
+      // fire and forget (see variant below for awaiting)
+      mutation.mutate({ row: x, col: y + i });
     }
-    
+  } else {
+    if (numberships + x > 10) return;
+    for (let i = 0; i < numberships; i++) {
+      mutation.mutate({ row: x + i, col: y });
     }
-    else
-    {
-      if(numberships +x > 10)
-      {
-        return;
-      }
-      for(let i = 0; i < numberships; i++) {
-        mutation.mutate({ row: x+i, col: y })
-    }
-    
-    }
-    setGameState(newGameState);
-    setnumberShips(numberships-1);
-
-    updatedPlaceCount()
-
   }
+
+  const next = numberships - 1;
+  setnumberShips(next);         // ← only once
+  await updatedPlaceCount();    // optional: await if server tracks it
+
+  console.log(next)
+  if (next <= 0) {
+    console.log("Finishign placing")
+    await finishedPlacing();    // ← now valid (async fn)
+}
+};
 
 
 
@@ -155,7 +150,7 @@ function Game() {
   return (
     <>
       <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-blue-900 via-blue-700 to-blue-400 flex flex-col gap-1 items-center justify-center">
-  <h1 className="text-6xl text-white mb-6 absolute top-3">BattleShip 🚢</h1>
+  <h1 className="text-6xl text-white mb-6 absolute top-3">BattleShip 🚢 {numberships}</h1>
   <div>{JSON.stringify(gameState)}</div>
   <h3 className="text-lg font-normal text-white mb-6 absolute top-20 italic">By Nyan Prakash</h3>
   <div className="flex flex-col items-end absolute top-3 right-3 gap-2">
@@ -255,7 +250,7 @@ function Game() {
 
 
                     : <div className='text-white'>
-                    {player.ID !== undefined && gameState.currentPlayer == player ? "Your turn!" : "It's your enemies turn!"}
+                    {player.ID !== undefined && gameState.currentPlayer?.ID == player.ID ? "Your turn!" : "It's your enemies turn!"}
                         
                 </div>}
             </div>

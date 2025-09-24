@@ -17,16 +17,19 @@ type MoveRequest = {
     col: number
 }
 
-app.post("/updatedPlaceCount/:id", (req, Request, res: Request) => {
+app.post("/updatedPlaceCount/:id", (req: Request, res: Request) => {
     
   const playerId = parseInt(req.params.id);
   if(gameState.players[playerId].placedCount == 2)
     {
       gameState.players[playerId].placedCount = 0
     }
-    else{
+    else
+      {
           gameState.players[playerId].placedCount -= 1;
     }
+
+    return res.json({ message: "yes" });
 
 
     
