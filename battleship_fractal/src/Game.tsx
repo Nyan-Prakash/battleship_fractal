@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {  useMutation } from '@tanstack/react-query'
 import {emptyOcean, emptyPlayer, type GameState, initialGameState, type Board, placeBoat, type Player} from './logic'
 
 function Game() {
 
-    type ShootRequest = { row: number; col: number; id: number };
+    type ShootRequest = { row: number; col: number; id: number, powerUp: string};
 
   const [gameState, setGameState] = useState<GameState>(initialGameState);
   const [connect, setConnected] = useState(false);
@@ -18,6 +18,8 @@ function Game() {
   const [finishedplacing, setFinishedPlacing] = useState(false);
   const [ocean, setOcean] = useState<Board>(emptyOcean);
   const [rotate, setRotate] = useState(false);
+
+  const [powerUp, setPowerUp] = useState("None");
 
 
 
@@ -68,7 +70,12 @@ function Game() {
             return;
         }
         try {
-            const result = await shooting({ row: ri, col: ci, id: player.ID });
+            if(player.ID == undefined)
+            {
+                return;
+            }
+            const result = await shooting({ row: ri, col: ci, id: player.ID, powerUp: powerUp });
+            
             console.log("Shot result:", result);
         } catch (err) {
             console.error(err);
@@ -100,9 +107,7 @@ function Game() {
         })
         return await res.json()
     }
-    const queryClient = useQueryClient()
     // Queries
-    const { isPending, error, data } = useQuery({ queryKey: ['game'], queryFn: () => console.log() })
     //const state = data as GameState
 
     // Mutations
@@ -127,33 +132,62 @@ function Game() {
 
 const OnHandleSelfClick = async (x: number, y: number) => { 
     console.log("OnHandleSelfClick") 
-  // bounds checks
   if (!rotate) {
     if (player.ID === undefined || !gameState.players[player.ID]) return;
+
+
     if (gameState.players[player.ID].placedCount + y > 10) return;
-    for (let i = 0; i < gameState.players[player.ID].placedCount; i++) {
-      // fire and forget (see variant below for awaiting)
-      mutation.mutate({ row: x, col: y + i });
-    }
-  } else {
-    if (player.ID === undefined || !gameState.players[player.ID]) return;
-    if (gameState.players[player.ID].placedCount + x > 10) return;
-    for (let i = 0; i < gameState.players[player.ID].placedCount; i++) {
-      mutation.mutate({ row: x + i, col: y });
-    }
+
+
+        for (let i = 0; i < gameState.players[player.ID].placedCount; i++) 
+        {
+            if(typeof gameState.board.oceans[player.ID][x][y+i] == "number")
+            {
+                return;
+            }
+
+        }
+
+        for (let i = 0; i < gameState.players[player.ID].placedCount; i++) 
+        {
+            mutation.mutate({ row: x, col: y + i });
+        }
+    } 
+    else {
+        if (player.ID === undefined || !gameState.players[player.ID]) return;
+
+        if (gameState.players[player.ID].placedCount + x > 10) return;
+
+
+
+        for (let i = 0; i < gameState.players[player.ID].placedCount; i++) 
+        {
+            if(typeof gameState.board.oceans[player.ID][x+i][y] == "number")
+            {
+                return;
+            }
+
+        }
+
+
+        for (let i = 0; i < gameState.players[player.ID].placedCount; i++) 
+        {
+            mutation.mutate({ row: x + i, col: y });
+
+        }
   }
 
   let next = 0;
   if (player.ID !== undefined && gameState.players[player.ID]) {
     next = gameState.players[player.ID].placedCount - 1;
-    await updatedPlaceCount();    // optional: await if server tracks it
+    await updatedPlaceCount();   
 
     console.log(next)
     if (next == 1) {
     
       console.log("Finishing placing")
 
-      await finishedPlacing();    // ← now valid (async fn)
+      await finishedPlacing();    
     }
   }
 };
@@ -180,7 +214,33 @@ const OnHandleSelfClick = async (x: number, y: number) => {
         } finally {
             setWaitingConnection(false);
         }
+
+
+        
 }
+        function FindSurroundingShips (ri: number, ci: number): String
+        {
+
+            let numShipsDetect = 0;
+
+            for(let row = -1; row < 2; row++)
+            {
+                for(let col = -1; col < 2; col++)
+                {
+                    console.log(gameState.board.oceans[player.ID === 0 ? 1 : 0][ri+row][ci+col]);
+                    if(typeof (gameState.board.oceans[player.ID === 0 ? 1 : 0][ri+row][ci+col]) == "number")
+                    {
+                        numShipsDetect++;
+                    }
+                }
+            }
+            if(numShipsDetect == 0)
+            {
+                return String(0);
+            }
+
+            return String(numShipsDetect);
+        }
 
   return (
     <>
@@ -228,6 +288,46 @@ const OnHandleSelfClick = async (x: number, y: number) => {
 
 
 </div>
+
+  {gameState.currentPlayer === player.ID && (<div className=" bg-blue-950 p-5 rounded-2xl opacity-100 text-center shadow-lg w-80" style={{ animationDuration: '2s' }}>
+
+
+
+                <div className='text-white flex flex-col gap-5'>
+                    <h2 className="text-2xl font-bold mb-2 text-white">Shop {powerUp}</h2>
+                    <div className='flex flex-row gap-10'>
+
+                        <button className={`flex flex-col gap-2 items-center rounded-2xl p-4 hover:bg-sky-700 ${powerUp=="Sonar" ? "bg-sky-700" : ""}`} onClick={() => {powerUp=="Sonar" ? setPowerUp("") : setPowerUp("Sonar")}}><div
+                            className={`w-8 h-8 bg-white text-black rounded-xl animate-pulse`}
+                            style={{ animationDuration: '0.5s' }}
+                            
+                            >?</div>
+
+                        <p className='text-[20px]'>Sonar</p>
+                        <p className='italic text-[10px]'>Detect surrounding ships</p>                
+                        </button>
+
+                        <button className={`flex flex-col gap-2 items-center rounded-2xl p-4  hover:bg-sky-700 ${powerUp=="Torpedo" && "bg-sky-700 "}`} onClick={() => {powerUp=="Torpedo" ? setPowerUp("") : setPowerUp("Torpedo")}}><div
+                            className={`w-2 h-8 bg-white text-black  animate-pulse`}
+                            style={{ animationDuration: '0.5s' }}
+                            onClick={() => {powerUp=="Torpedo" ? setPowerUp("") : setPowerUp("Torpedo")}}
+                            ></div>
+
+                        <p className='text-[20px]'>Torpedo</p>
+                        <p className='italic text-[10px]'>Attack a whole row</p>                
+                        </button>
+
+
+                    </div>
+          
+                </div>
+            </div>)
+    
+    
+    
+    
+    
+    }
 {/* Player's Ocean Board */}
 <div className="flex flex-row gap-30 items-end justify-center w-full mt-16 pt-10">
     {/* Player's Ocean Board */}
@@ -272,12 +372,14 @@ const OnHandleSelfClick = async (x: number, y: number) => {
         )}
     </div>
 
+  
+
     {/* Info Panel */}
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-6 ">
         {/* Ship Placement Info */}
         
         {connect ? (
-            <div className="animate-bounce bg-blue-950 p-5 rounded-2xl opacity-100 text-center shadow-lg w-56" style={{ animationDuration: '2s' }}>
+            <div className="animate-bounce bg-blue-950 p-5 rounded-2xl opacity-100 text-center shadow-lg w-56 mb-35" style={{ animationDuration: '2s' }}>
 
 
                 {gameState.state !== "Normal" ?
@@ -295,7 +397,7 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                 </div>}
             </div>
         ) : (
-            <div className="bg-blue-950 p-5 rounded-2xl opacity-100 text-center shadow-lg w-72 h-56 flex flex-col justify-center">
+            <div className="bg-blue-950 p-5 rounded-2xl opacity-100 text-center shadow-lg w-72 h-56 flex flex-col justify-center mb-15">
                 <div className='text-white'>
                     <div className="flex flex-col items-center gap-2">
                         <h2 className="text-2xl font-bold mb-2 text-white">How to Start the Game</h2>
@@ -327,15 +429,21 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                             }}
                             className={`w-8 h-8 ${
                                 gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Miss"
-                                    ? "bg-gray-200"
+                                    ? "bg-gray-500"
                                     : gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Hit"
                                     ? "bg-red-800"
                                     : gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Air"
                                     ? "bg-blue-900"
+                                    : gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Sonar"
+                                    ? "border-2 border-white bg-gray-500"
+                                    : gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Sonar-Hit"
+                                    ? "border-2 border- bg-red-800"
                                     : "bg-blue-900"
+
+
                             } opacity-60 text-white rounded-xl`}
                         >
-                            {waitingConnect ? "?" : ""}
+                            {(gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Sonar" || gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Sonar-Hit") && FindSurroundingShips(ri,ci)}
                         </button>
                     ))}
                 </div>
@@ -346,7 +454,7 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                     Connected
                 </div>
             ) : (
-                <div className="text-white text-2xl w-full flex justify-center items-center h-32 animate-bounce">
+                <div className="text-white text-2xl w-full flex justify-center items-center h-32 animate-pulse mb-30">
                     Waiting for opponent...
                 </div>
             )

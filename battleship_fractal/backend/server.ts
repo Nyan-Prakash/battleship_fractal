@@ -43,11 +43,16 @@ app.post("/placeboat/:id", (req: Request, res: Response) => {
 });
 
 app.post("/Shooting", (req: Request, res: Response) => {
-  const { row, col, id } = req.body as { row: number; col: number; id: number };
+  const { row, col, id, powerUp } = req.body as { row: number; col: number; id: number, powerUp: string};
   const playerId = parseInt(id.toString());
 
-  gameState = hit(row, col, playerId, gameState);
+
+
+  gameState = hit(row, col, playerId, gameState, powerUp);
   return res.json(gameState);
+
+
+
 });
 
 

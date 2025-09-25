@@ -4,7 +4,7 @@ export type Player = {
     placedCount: number;
 };
 
-export type Cell = Number | "Air" | "Miss" | "Hit";
+export type Cell = Number | "Air" | "Miss" | "Hit" | "Sonar" | "Sonar-Hit";
 
 export type Ocean = Cell[][];
 
@@ -62,7 +62,7 @@ export function placeBoat(x: number, y: number, ID: number, gameState: GameState
     return gameState;
 }
 
-export function hit(x: number, y: number, ID: number, gameState: GameState): GameState {
+export function hit(x: number, y: number, ID: number, gameState: GameState, powerUp: string): GameState {
     if (ID === undefined || ID < 0 || ID > 1) {
         return gameState;
     }
@@ -74,13 +74,28 @@ export function hit(x: number, y: number, ID: number, gameState: GameState): Gam
         newGameState.currentPlayer = otherID;
     }
 
-    if (newGameState.board.oceans[otherID][x][y] === "Air") {
-        newGameState.board.oceans[otherID][x][y] = "Miss";
-        return newGameState;
+    if(powerUp == "Sonar")
+    {
+        if (newGameState.board.oceans[otherID][x][y] === "Air") {
+            newGameState.board.oceans[otherID][x][y] = "Sonar";
+            return newGameState;
+        }
+        if (typeof newGameState.board.oceans[otherID][x][y] === "number") {
+            newGameState.board.oceans[otherID][x][y] = "Sonar-Hit";
+            return newGameState;
+        }
     }
-    if (typeof newGameState.board.oceans[otherID][x][y] === "number") {
-        newGameState.board.oceans[otherID][x][y] = "Hit";
-        return newGameState;
+    else
+    {
+
+        if (newGameState.board.oceans[otherID][x][y] === "Air") {
+            newGameState.board.oceans[otherID][x][y] = "Miss";
+            return newGameState;
+        }
+        if (typeof newGameState.board.oceans[otherID][x][y] === "number") {
+            newGameState.board.oceans[otherID][x][y] = "Hit";
+            return newGameState;
+        }
     }
 
     return gameState;
