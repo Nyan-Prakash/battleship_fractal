@@ -97,6 +97,19 @@ function Game() {
                 }
 
             }
+            if(powerUp == "Bomb")
+            {   
+                    for(let numR = -1; numR < 2; numR++)
+                    {
+
+                            await shooting({ row: ri+numR, col: ci, id: player.ID, powerUp: powerUp });
+                            await shooting({ row: ri+numR, col: ci-1, id: player.ID, powerUp: powerUp });
+                            await shooting({ row: ri+numR, col: ci+1, id: player.ID, powerUp: powerUp });
+
+
+                    }
+                    
+            }
             else
             {
                 await shooting({ row: ri, col: ci, id: player.ID, powerUp: powerUp });
@@ -322,15 +335,15 @@ const OnHandleSelfClick = async (x: number, y: number) => {
 
 </div>
 
-  {gameState.currentPlayer === player.ID && (<div className=" bg-blue-950 p-5 rounded-2xl opacity-100 text-center shadow-lg w-80" style={{ animationDuration: '2s' }}>
+  {gameState.currentPlayer === player.ID && (<div className=" bg-blue-950 p-5 rounded-2xl opacity-100 text-center shadow-lg w-140" style={{ animationDuration: '2s' }}>
 
 
 
-                <div className='text-white flex flex-col gap-5'>
-                    <h2 className="text-2xl font-bold mb-2 text-white">Shop {powerUp}{String(rotateTor)}</h2>
+                <div className='text-white flex flex-col gap-3'>
+                    <h2 className="text-2xl font-bold mb-2 text-white">Shop</h2>
                     <div className='flex flex-row gap-10'>
 
-                        <button className={`flex flex-col gap-2 items-center rounded-2xl p-4 hover:bg-sky-700 ${powerUp=="Sonar" ? "bg-sky-700" : ""}`} onClick={() => 
+                        <button className={`flex flex-col gap-2 items-center rounded-2xl p-4 w-40 hover:bg-sky-700 ${powerUp=="Sonar" ? "bg-sky-700" : ""}`} onClick={() => 
                         { 
                             setRotateTor("|");
                             if(powerUp=="Sonar" ) 
@@ -341,7 +354,8 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                             {
                             setPowerUp("Sonar");
                             }
-                    }}><div
+                    }}>
+                        <div
                             className={`w-8 h-8 bg-white text-black rounded-xl animate-pulse`}
                             style={{ animationDuration: '0.5s' }}
                             
@@ -350,8 +364,32 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                         <p className='text-[20px]'>Sonar</p>
                         <p className='italic text-[10px]'>Detect surrounding ships</p>                
                         </button>
+                        <button className={`flex flex-col gap-2 items-center rounded-2xl p-4 w-40 hover:bg-sky-700 ${powerUp=="Bomb" ? "bg-sky-700" : ""}`} onClick={() => 
+                        { 
+                            setRotateTor("|");
+                            if(powerUp=="Bomb") 
+                                { 
+                                    setPowerUp("None")
+                                } 
+                            else 
+                            {
+                            setPowerUp("Bomb");
+                            }
+                    }}>
+                        <div
+                            className={`w-8 h-8 bg-black text-black border-2 border-white rounded-full animate-pulse`}
+                            style={{ animationDuration: '0.5s' }}
+                            
+                            ></div>
 
-                        <button className={`flex flex-col gap-2 items-center rounded-2xl p-4  hover:bg-sky-700 ${powerUp=="Torpedo" && "bg-sky-700 "}`} onClick={() => {
+                        <p className='text-[20px]'>Bomb</p>
+                        <p className='italic text-[10px]'>Destory everything in a one block radius</p>                
+                        </button>
+
+
+
+
+                        <button className={`flex flex-col gap-2 items-center rounded-2xl p-4 w-40 hover:bg-sky-700 ${powerUp=="Torpedo" && "bg-sky-700 "}`} onClick={() => {
                                 
                                 if(powerUp != "Torpedo" && rotateTor=="|")
                                 {
