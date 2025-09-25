@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
@@ -23,6 +23,9 @@ function Game() {
 
   const [powerUp, setPowerUp] = useState("None");
 
+
+  const [hoverRow, setHoverRow] = useState<number>(99);
+  const [hoverCol, setHoverCol] = useState<number>(99);
 
 
   const [name, setName] = useState<string>('');
@@ -244,6 +247,11 @@ const OnHandleSelfClick = async (x: number, y: number) => {
             return String(numShipsDetect);
         }
 
+        function handleMouseHover(ri, ci)
+        {
+            
+        }
+
   return (
     <>
       <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-blue-900 via-blue-700 to-blue-400 flex flex-col gap-1 items-center justify-center">
@@ -346,10 +354,14 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                                     : cell === "Hit"
                                     ? "bg-orange-500"
                                     : "bg-blue-950"
-                            }`}
+                            } ${( player.ID !== undefined &&(ci > (hoverCol ?? -1) && ri==hoverRow && ci+hoverCol< gameState.players[player.ID].placedCount) && "bg-green-400")}`}
                             onClick={() => OnHandleSelfClick(ri, ci)}
+                            onMouseEnter={() => {
+                                setHoverCol(ci-1);
+                                setHoverRow(ri);
+                            }}
                         >
-                            {cell === player.ID ? player.ID : cell === "Hit" ? "" : ""}
+                            {ci}{cell === player.ID ? player.ID : cell === "Hit" ? "" : ""}
                         </button>
                     ))}
                 </div>
