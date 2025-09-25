@@ -3,6 +3,15 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 import {  useMutation } from '@tanstack/react-query'
+import { useRef } from "react";
+import place from "/src/placingBoat.mp3";
+import MyTurn from "/src/MyTurn.mp3";
+import shotSound from "/src/shot.wav";
+import explosionSound from "/src/explosion.wav";
+import torpedoExplosion from "/src/torpedo_explosion.wav";
+
+
+
 import {emptyOcean, emptyPlayer, type GameState, initialGameState, type Board, placeBoat, type Player} from './logic'
 
 function Game() {
@@ -22,6 +31,55 @@ function Game() {
   const [rotateTor, setRotateTor] = useState<String>("Nope");
 
   const [powerUp, setPowerUp] = useState("None");
+  const audioRef = useRef<HTMLAudioElement | null>(null);  
+  const audioRefPlace = useRef<HTMLAudioElement | null>(null);
+    const audioRefShot = useRef<HTMLAudioElement | null>(null);
+    const audioRefExplode = useRef<HTMLAudioElement | null>(null);
+    const audioRefTorpExplode = useRef<HTMLAudioElement | null>(null);
+
+
+
+
+  const play = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0; // restart from beginning
+      audioRef.current.play();
+    }
+  };const playPlace = () => {
+    if (audioRefPlace.current) {
+      audioRefPlace.current.currentTime = 0; // restart from beginning
+      audioRefPlace.current.play();
+    }
+  };
+
+  const playShot = () => {
+    if (audioRefShot.current) {
+                    audioRefShot.current.volume = 0.01;    // set volume (50%)
+
+      audioRefShot.current.currentTime = 0; // restart from beginning
+      audioRefShot.current.play();
+    }
+  };
+
+  const playExplode = () => {
+    if (audioRefExplode.current) {
+            audioRefExplode.current.volume = 0.01;    // set volume (50%)
+
+      audioRefExplode.current.currentTime = 0; // restart from beginning
+      audioRefExplode.current.play();
+    }
+  };
+
+  const playTorpExplode = () => {
+    if (audioRefTorpExplode.current) {
+            audioRefTorpExplode.current.volume = 0.01;    // set volume (50%)
+
+      audioRefTorpExplode.current.currentTime = 0; // restart from beginning
+      audioRefTorpExplode.current.play();
+    }
+  };
+
+
 
 
 
@@ -37,6 +95,8 @@ function Game() {
     }
 
     async function finishedPlacing(): Promise<void> {
+
+        play();
             await fetch('/finishedPlacing', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -46,6 +106,7 @@ function Game() {
     
 
     async function placingBoat(params: { row: number, col: number }) {
+        playPlace();
         const res = await fetch(`/placeboat/${player.ID}`, {
             method: "POST",
             headers: {
@@ -67,6 +128,8 @@ function Game() {
     }
 
     async function handleShoot(ri: number, ci: number) {
+                        playShot();
+
         if (player?.ID === undefined && gameState.currentPlayer != player.ID) {
             console.warn("No player ID yet; can’t shoot.");
             return;
@@ -79,6 +142,7 @@ function Game() {
 
             if(powerUp == "Torpedo")
             {
+                playTorpExplode();
                 if(rotateTor == "|")
                 {
                     for(let num = 0; num < 10; num++)
@@ -99,6 +163,7 @@ function Game() {
             }
             if(powerUp == "Bomb")
             {   
+                playExplode();
                     for(let numR = -1; numR < 2; numR++)
                     {
 
@@ -112,6 +177,7 @@ function Game() {
             }
             else
             {
+                playShot();
                 await shooting({ row: ri, col: ci, id: player.ID, powerUp: powerUp });
 
             }
@@ -161,6 +227,7 @@ function Game() {
     useEffect(() => {
     const interval = setInterval(() => {
         getGame();
+
     }, 100); // 500ms = 0.5s
 
     return () => clearInterval(interval); // cleanup
@@ -171,6 +238,7 @@ function Game() {
   
 
 const OnHandleSelfClick = async (x: number, y: number) => { 
+
   if (!rotate) {
     if (player.ID === undefined || !gameState.players[player.ID]) return;
 
@@ -274,7 +342,9 @@ const OnHandleSelfClick = async (x: number, y: number) => {
             {
                 for(let col = -1; col < 2; col++)
                 {
-                    if(typeof (gameState.board.oceans[ID][ri+row][ci+col]) == "number")
+                    if (row === 0 && col === 0) continue;
+
+                    if(gameState.board.oceans[ID][ri+row][ci+col] == 1 || gameState.board.oceans[ID][ri+row][ci+col] == 0)
                     {
                         numShipsDetect++;
                     }
@@ -294,6 +364,15 @@ const OnHandleSelfClick = async (x: number, y: number) => {
   <h1 className="text-6xl text-white mb-6 absolute top-3">
     BattleShip 🚢
   </h1>
+        <audio ref={audioRefPlace} src={place}></audio>
+        <audio ref={audioRef} src={MyTurn}></audio>
+        <audio ref={audioRefShot} src={shotSound}></audio>
+        <audio ref={audioRefExplode} src={explosionSound}></audio>
+        <audio ref={audioRefTorpExplode} src={torpedoExplosion}></audio>
+
+
+
+
   <h3 className="text-lg font-normal text-white mb-6 absolute top-20 italic">By Nyan</h3>
   <div className="flex flex-col items-end absolute top-3 right-3 gap-2">
 
@@ -312,7 +391,7 @@ const OnHandleSelfClick = async (x: number, y: number) => {
     value={gameCode}
     />
 
-    <button className="px-4 py-2 bg-blue-700 text-white rounded-lg border border-white " onClick={() => handleSubmit()}>Submit</button>
+    <button className="px-4 py-2 bg-blue-700 text-white rounded-lg border border-white hover:bg-white hover:text-blue-700" onClick={() => handleSubmit()}>Submit</button>
     {waitingConnect && <div className=' text-white'>Waiting for another player...</div>}
 
 
