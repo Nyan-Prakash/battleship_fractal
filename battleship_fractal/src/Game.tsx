@@ -19,6 +19,8 @@ function Game() {
   const [ocean, setOcean] = useState<Board>(emptyOcean);
   const [rotate, setRotate] = useState(false);
 
+  const [rotateTor, setRotateTor] = useState(false);
+
   const [powerUp, setPowerUp] = useState("None");
 
 
@@ -248,7 +250,7 @@ const OnHandleSelfClick = async (x: number, y: number) => {
   <h1 className="text-6xl text-white mb-6 absolute top-3">
     BattleShip 🚢
   </h1>
-  <h3 className="text-lg font-normal text-white mb-6 absolute top-20 italic">By Nyan Prakash</h3>
+  <h3 className="text-lg font-normal text-white mb-6 absolute top-20 italic">By Nyan</h3>
   <div className="flex flex-col items-end absolute top-3 right-3 gap-2">
 
     <input
@@ -428,6 +430,7 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                                 }
                             }}
                             className={`w-8 h-8 ${
+                                
                                 gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Miss"
                                     ? "bg-gray-500"
                                     : gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Hit"
@@ -441,7 +444,7 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                                     : "bg-blue-900"
 
 
-                            } opacity-60 text-white rounded-xl`}
+                            } opacity-60 text-white rounded-xl ${gameState.currentPlayer === player.ID && "hover:border-2"}`}
                         >
                             {(gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Sonar" || gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Sonar-Hit") && FindSurroundingShips(ri,ci)}
                         </button>
