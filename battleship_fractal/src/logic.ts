@@ -2,6 +2,7 @@ export type Player = {
     name: string | undefined;
     ID: number | undefined;
     placedCount: number;
+    money: number;
 };
 
 export type Cell = Number | "Air" | "Miss" | "Hit" | "Sonar" | "Sonar-Hit";
@@ -27,6 +28,7 @@ export const emptyPlayer: Player = {
     name: undefined,
     ID: undefined,
     placedCount: 5,
+    money:0,
 };
 
 export const emptyOcean: Board = {
@@ -72,6 +74,11 @@ export function hit(x: number, y: number, ID: number, gameState: GameState, powe
     newGameState.currentPlayer = otherID;
     if (newGameState.currentPlayer) {
         newGameState.currentPlayer = otherID;
+    }
+
+    if(newGameState.currentPlayer !== ID)
+    {
+        newGameState.players[ID].money += 1;
     }
 
     if(powerUp == "Sonar")

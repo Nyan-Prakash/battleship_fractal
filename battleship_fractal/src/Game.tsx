@@ -419,7 +419,11 @@ const OnHandleSelfClick = async (x: number, y: number) => {
 
 
                 <div className='text-white flex flex-col gap-3'>
+                    <div>
+                    
                     <h2 className="text-2xl font-bold mb-2 text-white">Shop</h2>
+                    <div>${player.ID !== undefined ? gameState.players[player.ID].money : ""}</div>
+                    </div>
                     <div className='flex flex-row gap-10'>
 
                         <button className={`flex flex-col gap-2 items-center rounded-2xl p-4 w-40 hover:bg-sky-700 ${powerUp=="Sonar" ? "bg-sky-700" : ""}`} onClick={() => 

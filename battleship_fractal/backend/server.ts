@@ -82,7 +82,7 @@ app.post("/startGame", (req: Request, res: Response) => {
     gameState = initialGameState;
 
     gameState.code = code;
-    gameState.players[0] = { ID: 0, name, placedCount: 5 };
+    gameState.players[0] = { ID: 0, name, placedCount: 5, money: 1 };
     gameState.state = "Placing";
     return res.json({
       player: gameState.players[0],
@@ -92,7 +92,7 @@ app.post("/startGame", (req: Request, res: Response) => {
 
   // If player 2 slot is free, join them
   if (gameState.code == code) {
-    gameState.players[1] = { ID: 1, name, placedCount: 5 };
+    gameState.players[1] = { ID: 1, name, placedCount: 5, money:1 };
     return res.json({
       player: gameState.players[1], 
       gameState,
