@@ -19,7 +19,7 @@ function Game() {
   const [ocean, setOcean] = useState<Board>(emptyOcean);
   const [rotate, setRotate] = useState(false);
 
-  const [rotateTor, setRotateTor] = useState(false);
+  const [rotateTor, setRotateTor] = useState<String>("Nope");
 
   const [powerUp, setPowerUp] = useState("None");
 
@@ -76,9 +76,34 @@ function Game() {
             {
                 return;
             }
-            const result = await shooting({ row: ri, col: ci, id: player.ID, powerUp: powerUp });
+
+            if(powerUp == "Torpedo")
+            {
+                if(rotateTor == "|")
+                {
+                    for(let num = 0; num < 10; num++)
+                    {
+                        await shooting({ row: num, col: ci, id: player.ID, powerUp: powerUp });
+
+                    }
+                }
+                if(rotateTor == "-")
+                {
+                    for(let num = 0; num < 10; num++)
+                    {
+                        await shooting({ row: ri, col: num, id: player.ID, powerUp: powerUp });
+
+                    }
+                }
+
+            }
+            else
+            {
+                await shooting({ row: ri, col: ci, id: player.ID, powerUp: powerUp });
+
+            }
+
             
-            console.log("Shot result:", result);
         } catch (err) {
             console.error(err);
             alert("Shot failed. Check server logs and network tab.");
@@ -133,7 +158,6 @@ function Game() {
   
 
 const OnHandleSelfClick = async (x: number, y: number) => { 
-    console.log("OnHandleSelfClick") 
   if (!rotate) {
     if (player.ID === undefined || !gameState.players[player.ID]) return;
 
@@ -220,17 +244,24 @@ const OnHandleSelfClick = async (x: number, y: number) => {
 
         
 }
-        function FindSurroundingShips (ri: number, ci: number): String
+        function FindSurroundingShips (ri: number, ci: number, Me: boolean): String
         {
 
             let numShipsDetect = 0;
 
+            let ID = 1;
+
+            if(Me)
+            {
+                ID = player.ID !== undefined ? player.ID : 0;
+            }
+            
+  
             for(let row = -1; row < 2; row++)
             {
                 for(let col = -1; col < 2; col++)
                 {
-                    console.log(gameState.board.oceans[player.ID === 0 ? 1 : 0][ri+row][ci+col]);
-                    if(typeof (gameState.board.oceans[player.ID === 0 ? 1 : 0][ri+row][ci+col]) == "number")
+                    if(typeof (gameState.board.oceans[ID][ri+row][ci+col]) == "number")
                     {
                         numShipsDetect++;
                     }
@@ -296,10 +327,21 @@ const OnHandleSelfClick = async (x: number, y: number) => {
 
 
                 <div className='text-white flex flex-col gap-5'>
-                    <h2 className="text-2xl font-bold mb-2 text-white">Shop {powerUp}</h2>
+                    <h2 className="text-2xl font-bold mb-2 text-white">Shop {powerUp}{String(rotateTor)}</h2>
                     <div className='flex flex-row gap-10'>
 
-                        <button className={`flex flex-col gap-2 items-center rounded-2xl p-4 hover:bg-sky-700 ${powerUp=="Sonar" ? "bg-sky-700" : ""}`} onClick={() => {powerUp=="Sonar" ? setPowerUp("") : setPowerUp("Sonar")}}><div
+                        <button className={`flex flex-col gap-2 items-center rounded-2xl p-4 hover:bg-sky-700 ${powerUp=="Sonar" ? "bg-sky-700" : ""}`} onClick={() => 
+                        { 
+                            setRotateTor("|");
+                            if(powerUp=="Sonar" ) 
+                                { 
+                                    setPowerUp("None")
+                                } 
+                            else 
+                            {
+                            setPowerUp("Sonar");
+                            }
+                    }}><div
                             className={`w-8 h-8 bg-white text-black rounded-xl animate-pulse`}
                             style={{ animationDuration: '0.5s' }}
                             
@@ -309,10 +351,37 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                         <p className='italic text-[10px]'>Detect surrounding ships</p>                
                         </button>
 
-                        <button className={`flex flex-col gap-2 items-center rounded-2xl p-4  hover:bg-sky-700 ${powerUp=="Torpedo" && "bg-sky-700 "}`} onClick={() => {powerUp=="Torpedo" ? setPowerUp("") : setPowerUp("Torpedo")}}><div
-                            className={`w-2 h-8 bg-white text-black  animate-pulse`}
+                        <button className={`flex flex-col gap-2 items-center rounded-2xl p-4  hover:bg-sky-700 ${powerUp=="Torpedo" && "bg-sky-700 "}`} onClick={() => {
+                                
+                                if(powerUp != "Torpedo" && rotateTor=="|")
+                                {
+                                    setPowerUp("Torpedo");
+                                    setRotateTor("|");
+                                }
+                                else if(powerUp != "Torpedo" && rotateTor=="-")
+                                {
+                                    setPowerUp("Torpedo");
+                                    setRotateTor("-");
+                                }
+                                else if(powerUp == "Torpedo" && rotateTor=="|")
+                                {
+                                    setRotateTor("-");
+                                }
+                                else if(powerUp == "Torpedo" && rotateTor=="-")
+                                {
+                                    setPowerUp("None")
+                                    setRotateTor("Nope");
+                                }
+                                else
+                                {
+                                    setPowerUp("Torpedo");
+                                    setRotateTor("|");
+
+                                }
+
+                            }}><div
+                            className={`${rotateTor=="-" ? "w-8 h-2" : "w-2 h-8"} bg-white text-black  animate-pulse`}
                             style={{ animationDuration: '0.5s' }}
-                            onClick={() => {powerUp=="Torpedo" ? setPowerUp("") : setPowerUp("Torpedo")}}
                             ></div>
 
                         <p className='text-[20px]'>Torpedo</p>
@@ -343,13 +412,15 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                             className={`w-8 h-8 text-white rounded-xl ${
                                 cell === player.ID
                                     ? "bg-white"
-                                    : cell === "Hit"
-                                    ? "bg-orange-500"
-                                    : "bg-blue-950"
-                            }`}
+                                    : cell === "Hit" || cell === "Sonar-Hit"
+                                    ? "bg-red-500"
+                                    : (player.ID !== undefined && (gameState.board.oceans[player.ID][ri][ci] == "Miss" || gameState.board.oceans[player.ID][ri][ci] == "Sonar"))
+                                    ?"bg-blue-900"
+                                    :"bg-blue-950"
+                            } ${player.ID !== undefined &&(gameState.board.oceans[player.ID][ri][ci] === "Sonar" || gameState.board.oceans[player.ID][ri][ci] === "Sonar-Hit") ? "border-2" : ""}`}
                             onClick={() => OnHandleSelfClick(ri, ci)}
                         >
-                            {cell === player.ID ? player.ID : cell === "Hit" ? "" : ""}
+                            {(player.ID !== undefined && gameState.board.oceans[player.ID][ri][ci] === "Sonar" || (player.ID !== undefined && gameState.board.oceans[player.ID][ri][ci] === "Sonar-Hit")) && FindSurroundingShips(ri,ci, true)}
                         </button>
                     ))}
                 </div>
@@ -434,19 +505,19 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                                 gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Miss"
                                     ? "bg-gray-500"
                                     : gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Hit"
-                                    ? "bg-red-800"
+                                    ? "bg-orange-800"
                                     : gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Air"
                                     ? "bg-blue-900"
                                     : gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Sonar"
                                     ? "border-2 border-white bg-gray-500"
                                     : gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Sonar-Hit"
-                                    ? "border-2 border- bg-red-800"
+                                    ? "border-2 border- bg-orange-800"
                                     : "bg-blue-900"
 
 
                             } opacity-60 text-white rounded-xl ${gameState.currentPlayer === player.ID && "hover:border-2"}`}
                         >
-                            {(gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Sonar" || gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Sonar-Hit") && FindSurroundingShips(ri,ci)}
+                            {(gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Sonar" || gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Sonar-Hit") && FindSurroundingShips(ri,ci, false)}
                         </button>
                     ))}
                 </div>
