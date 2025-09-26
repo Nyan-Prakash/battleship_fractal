@@ -1,5 +1,9 @@
 import express from "express";
 import ViteExpress from "vite-express";
+import 'dotenv/config';
+import { upsertGameState, getGameState, listJoinableCodes } from '../db/repos.ts';
+ 
+
 import {
   emptyPlayer,
   hit,
@@ -25,7 +29,7 @@ type MoveRequest = {
   gameCode: string;
 };
 
-app.post("/updatedPlaceCount/:id/:gameCode", (req: Request, res: Request) => {
+app.post("/updatedPlaceCount/:id/:gameCode", async (req: Request, res: Request) => {
   const playerId = parseInt(req.params.id);
   const gameCode: string = req.params.gameCode;
 
@@ -39,11 +43,13 @@ app.post("/updatedPlaceCount/:id/:gameCode", (req: Request, res: Request) => {
     }
     gameStates.set(gameCode, localState);
   }
+    await upsertGameState(gameCode, localState);
+
 
   return res.json({ message: "yes" });
 });
 
-app.post("/removeMoney", (req: Request, res: Request) => {
+app.post("/removeMoney", async (req: Request, res: Request) => {
   const playerId = parseInt(req.body.ID);
   const amount = parseInt(req.body.amount);
   const gameCode: string = req.body.gameCode;
@@ -56,6 +62,8 @@ app.post("/removeMoney", (req: Request, res: Request) => {
     localState.players[playerId].money += 1;
   
     gameStates.set(gameCode, localState);
+        await upsertGameState(gameCode, localState);
+
       return res.json({ message: ("yes"+localState.players[playerId].money)});
 
   }
@@ -63,7 +71,7 @@ app.post("/removeMoney", (req: Request, res: Request) => {
   return res.json({ message: ("yes")});
 });
 
-app.post("/placeboat/:id", (req: Request, res: Response) => {
+app.post("/placeboat/:id", async (req: Request, res: Response) => {
   const moveReq = req.body as MoveRequest;
   const playerId = parseInt(req.params.id);
   const localState = gameStates.get(moveReq.gameCode);
@@ -78,10 +86,11 @@ app.post("/placeboat/:id", (req: Request, res: Response) => {
     localState
   );
   gameStates.set(moveReq.gameCode, updatedState);
+  await upsertGameState(moveReq.gameCode, localState);
   return res.json(updatedState);
 });
 
-app.post("/Shooting", (req: Request, res: Response) => {
+app.post("/Shooting", async(req: Request, res: Response) => {
   const { row, col, id, powerUp, gameCode } = req.body as {
     row: number;
     col: number;
@@ -99,6 +108,8 @@ app.post("/Shooting", (req: Request, res: Response) => {
 
   const updatedState = hit(row, col, playerId, localState, powerUp);
   gameStates.set(gameCode, updatedState);
+  await upsertGameState(gameCode, updatedState);
+
 
   return res.json(updatedState);
 });
@@ -119,7 +130,7 @@ app.post("/finishedPlacing/:gameCode", (req: Request, res: Request) => {
   return res.json({ message: "yes" });
 });
 
-app.post("/startGame", (req: Request, res: Response) => {
+app.post("/startGame", async (req: Request, res: Response)  => {
   gameState = initialGameState;
 
   gameState.code = uuidv4();
@@ -127,34 +138,37 @@ app.post("/startGame", (req: Request, res: Response) => {
   gameState.state = "Waiting";
 
   gameStates.set(gameState.code, gameState);
+  await upsertGameState(gameState.code, gameState);
   return res.json({
     player: gameState.players[0],
     gameState,
   });
 });
 
-app.post(`/join/:gameCode`, (req: Request, res: Response) => {
+app.post(`/join/:gameCode`, async (req: Request, res: Response) => {
   gameState.players[1] = { ID: 1, placedCount: 5, money: 1 };
   gameState.state = "Placing";
 
   gameStates.set(gameState.code, gameState);
+  await upsertGameState(gameState.code, gameStates.get(gameState.code));
   return res.json({
     player: gameState.players[1],
     gameState,
   });
 });
 
-app.get("/games", (req, res) => {
-  res.json([...gameStates.keys()]);
+app.get("/games", async (req, res) => {
+  const codes = await listJoinableCodes();
+  res.json(codes);
+
+
 });
 
-app.post("/game", (req, res) => {
-  const { gameCode } = req.body;
-  const state = gameStates.get(gameCode);
-  if (!state) {
-    return res.status(404).json({ error: "Game not found" });
-  }
-  return res.json({ gameState: state });
+app.post('/game', async (req, res) => {
+  const code = String(req.body.gameCode ?? req.body.code);
+  const row = await getGameState(code);
+  if (!row) return res.status(404).json({ error: 'Not found' });
+  res.json({ gameState: row.state });
 });
 
 import type { Request, Response } from "express";
