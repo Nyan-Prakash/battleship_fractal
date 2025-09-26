@@ -1,5 +1,4 @@
 export type Player = {
-    name: string | undefined;
     ID: number | undefined;
     placedCount: number;
     money: number;
@@ -15,7 +14,7 @@ export type Board = {
 
 export type GameState = {
     board: Board;
-    code: number
+    code: string;
     players: Player[];
     currentPlayer: number | undefined;
     winner: Player | undefined;
@@ -25,7 +24,6 @@ export type GameState = {
 };
 
 export const emptyPlayer: Player = {
-    name: undefined,
     ID: undefined,
     placedCount: 5,
     money:0,
@@ -39,7 +37,7 @@ export const emptyOcean: Board = {
 };
 
 export const initialGameState: GameState = {
-    code: 0,
+    code: "",
     board: emptyOcean,
     players: [emptyPlayer, emptyPlayer],
     currentPlayer: undefined,
