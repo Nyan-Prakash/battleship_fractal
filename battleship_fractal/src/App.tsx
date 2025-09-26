@@ -156,7 +156,7 @@ function App() {
                 ))}
             </div>
           ) : (
-            <div className="text-5xl text-white animate-pulse">Waiting for other player... {ID}</div>
+            <div className="text-5xl text-white animate-pulse">Waiting for the other player...</div>
           )}
         </div>
       )}
