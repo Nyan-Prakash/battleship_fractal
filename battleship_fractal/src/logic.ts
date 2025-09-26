@@ -114,8 +114,8 @@ export function hit(
 
 
       let numCount = 0;
-      for (let r = 0; r > 11; r++) {
-        for (let c = 0; c > 11; c++) {
+      for (let r = 0; r < gameState.board.oceans.length; r++) {
+        for (let c = 0; c < gameState.board.oceans[r].length; c++) {
           if (typeof newGameState.board.oceans[otherID][r][c] === "number") {
             numCount++;
           }

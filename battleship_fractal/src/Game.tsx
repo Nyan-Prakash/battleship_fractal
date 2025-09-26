@@ -387,7 +387,7 @@ function Game({ RealName, RealGameCode, RealID }: GameProps) {
           className={`flex ${
             rotate ? "flex-col" : "flex-row"
           } gap-1 ml-2 absolute ${
-            rotate ? "top-40 left-120" : "top-65  left-100"
+            rotate ? "top-25 left-110" : "top-55  left-90"
           }`}
         >
           {playerID !== undefined &&
@@ -588,7 +588,7 @@ function Game({ RealName, RealGameCode, RealID }: GameProps) {
 
             {gameState.state ? (
               <div
-                className="animate-bounce bg-blue-950 p-5 rounded-2xl opacity-100 text-center shadow-lg w-80 mb-35"
+                className={`animate-bounce ${gameState.winner == 99 ? "bg-blue-600" : (gameState.winner == playerID ? "bg-green-600": "bg-red-600")} mb-40 p-5 rounded-2xl opacity-100 text-center shadow-lg w-80 mb-3`}
                 style={{ animationDuration: "2s" }}
               >
                 {gameState.state !== "Normal" ? (
@@ -644,7 +644,7 @@ function Game({ RealName, RealGameCode, RealID }: GameProps) {
                     <button
                       key={ci}
                       onClick={() => {
-                        if (gameState.currentPlayer === playerID) {
+                        if (gameState.currentPlayer === playerID && gameState.winner == 99) {
                           handleShoot(ri, ci);
                         } else {
                           console.log("nope");
