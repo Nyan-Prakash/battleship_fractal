@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1758926653931,
+      "tag": "0000_stale_reaper",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1758927118945,
+      "tag": "0001_quiet_mongu",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1758928479082,
+      "tag": "0002_glamorous_ghost_rider",
+      "breakpoints": true
+    }
+  ]
+}
