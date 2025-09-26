@@ -14,22 +14,36 @@ import torpedoExplosion from "/src/torpedo_explosion.wav";
 
 import {emptyOcean, emptyPlayer, type GameState, initialGameState, type Board, placeBoat, type Player} from './logic'
 
-function Game() {
 
-    type ShootRequest = { row: number; col: number; id: number, powerUp: string};
+
+
+type GameProps = {
+    RealName: string;
+    RealGameCode: string;
+    RealID: number
+};
+
+function Game({
+    RealName,
+    RealGameCode,
+    RealID,
+
+}: GameProps) {
+    type ShootRequest = { row: number; col: number; id: number, powerUp: string, gameCode: string};
 
   const [gameState, setGameState] = useState<GameState>(initialGameState);
   const [connect, setConnected] = useState(false);
   const [waitingConnect, setWaitingConnection] = useState(false);
 
-  const [player, setPlayer] = useState<Player>(emptyPlayer);
+  const [playerID, setPlayer] = useState<number>(RealID);
   
   const [finishedplacing, setFinishedPlacing] = useState(false);
   const [ocean, setOcean] = useState<Board>(emptyOcean);
   const [rotate, setRotate] = useState(false);
 
   const [rotateTor, setRotateTor] = useState<String>("Nope");
-
+const Rname = RealName;
+const RGame = RealGameCode;
   const [powerUp, setPowerUp] = useState("None");
   const audioRef = useRef<HTMLAudioElement | null>(null);  
   const audioRefPlace = useRef<HTMLAudioElement | null>(null);
@@ -81,23 +95,26 @@ function Game() {
 
 
 
-
-
   const [name, setName] = useState<string>('');
   const [gameCode, setGameCode] = useState<number>();
 
 
     async function getGame(): Promise<GameState> {
-        const res = await fetch("/game");
+        const res = await fetch("/game", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ gameCode: RealGameCode }),
+        });
         const data = await res.json();
-        setGameState(data);
-        return data;
+        console.log(data);
+        setGameState(data.gameState);
+        return data.gameState;
     }
 
     async function finishedPlacing(): Promise<void> {
 
         play();
-            await fetch('/finishedPlacing', {
+            await fetch(`/finishedPlacing/${RealGameCode}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
         });
@@ -105,9 +122,9 @@ function Game() {
         }
     
 
-    async function placingBoat(params: { row: number, col: number }) {
+    async function placingBoat(params: { row: number, col: number, gameCode: string }) {
         playPlace();
-        const res = await fetch(`/placeboat/${player.ID}`, {
+        const res = await fetch(`/placeboat/${playerID}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -119,7 +136,7 @@ function Game() {
 
     async function updatedPlaceCount() {
         console.log("updatedPlaceCount")
-        return await fetch(`/updatedPlaceCount/${player.ID}`, {
+        return await fetch(`/updatedPlaceCount/${playerID}/${RealGameCode}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -128,14 +145,14 @@ function Game() {
     }
 
     async function handleShoot(ri: number, ci: number) {
-                        playShot();
+        playShot();
 
-        if (player?.ID === undefined && gameState.currentPlayer != player.ID) {
+        if (playerID === undefined && gameState.currentPlayer != playerID) {
             console.warn("No player ID yet; can’t shoot.");
             return;
         }
         try {
-            if(player.ID == undefined)
+            if(playerID == undefined)
             {
                 return;
             }
@@ -147,16 +164,14 @@ function Game() {
                 {
                     for(let num = 0; num < 10; num++)
                     {
-                        await shooting({ row: num, col: ci, id: player.ID, powerUp: powerUp });
-
+                        await shooting({ row: num, col: ci, id: playerID, powerUp: powerUp, gameCode: RealGameCode });
                     }
                 }
                 if(rotateTor == "-")
                 {
                     for(let num = 0; num < 10; num++)
                     {
-                        await shooting({ row: ri, col: num, id: player.ID, powerUp: powerUp });
-
+                        await shooting({ row: ri, col: num, id: playerID, powerUp: powerUp, gameCode: RealGameCode });
                     }
                 }
 
@@ -167,10 +182,9 @@ function Game() {
                     for(let numR = -1; numR < 2; numR++)
                     {
 
-                            await shooting({ row: ri+numR, col: ci, id: player.ID, powerUp: powerUp });
-                            await shooting({ row: ri+numR, col: ci-1, id: player.ID, powerUp: powerUp });
-                            await shooting({ row: ri+numR, col: ci+1, id: player.ID, powerUp: powerUp });
-
+                            await shooting({ row: ri+numR, col: ci, id: playerID, powerUp: powerUp, gameCode: RealGameCode });                            
+                            await shooting({ row: ri+numR, col: ci-1, id: playerID, powerUp: powerUp, gameCode: RealGameCode });                            
+                            await shooting({ row: ri+numR, col: ci+1, id: playerID, powerUp: powerUp, gameCode: RealGameCode });
 
                     }
                     
@@ -178,8 +192,7 @@ function Game() {
             else
             {
                 playShot();
-                await shooting({ row: ri, col: ci, id: player.ID, powerUp: powerUp });
-
+                await shooting({ row: ri, col: ci, id: playerID, powerUp: powerUp, gameCode: RealGameCode });
             }
 
             
@@ -201,21 +214,6 @@ function Game() {
         return res.json();
 }
 
-
-    async function submitGame(params: { name: string, code: number }) {
-        console.log(name); 
-        const res = await fetch(`/startGame`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(params)
-        })
-        return await res.json()
-    }
-    // Queries
-    //const state = data as GameState
-
     // Mutations
     const mutation = useMutation({
         mutationFn: placingBoat,
@@ -235,41 +233,44 @@ function Game() {
 
 
 
+
+
+
   
 
 const OnHandleSelfClick = async (x: number, y: number) => { 
 
   if (!rotate) {
-    if (player.ID === undefined || !gameState.players[player.ID]) return;
+    if (playerID === undefined || !gameState.players[playerID]) return;
 
 
-    if (gameState.players[player.ID].placedCount + y > 10) return;
+    if (gameState.players[playerID].placedCount + y > 10) return;
 
 
-        for (let i = 0; i < gameState.players[player.ID].placedCount; i++) 
+        for (let i = 0; i < gameState.players[playerID].placedCount; i++) 
         {
-            if(typeof gameState.board.oceans[player.ID][x][y+i] == "number")
+            if(typeof gameState.board.oceans[playerID][x][y+i] == "number")
             {
                 return;
             }
 
         }
 
-        for (let i = 0; i < gameState.players[player.ID].placedCount; i++) 
+        for (let i = 0; i < gameState.players[playerID].placedCount; i++) 
         {
-            mutation.mutate({ row: x, col: y + i });
+            mutation.mutate({ row: x, col: y + i, gameCode: RealGameCode });
         }
     } 
     else {
-        if (player.ID === undefined || !gameState.players[player.ID]) return;
+        if (playerID === undefined || !gameState.players[playerID]) return;
 
-        if (gameState.players[player.ID].placedCount + x > 10) return;
+        if (gameState.players[playerID].placedCount + x > 10) return;
 
 
 
-        for (let i = 0; i < gameState.players[player.ID].placedCount; i++) 
+        for (let i = 0; i < gameState.players[playerID].placedCount; i++) 
         {
-            if(typeof gameState.board.oceans[player.ID][x+i][y] == "number")
+            if(typeof gameState.board.oceans[playerID][x+i][y] == "number")
             {
                 return;
             }
@@ -277,16 +278,17 @@ const OnHandleSelfClick = async (x: number, y: number) => {
         }
 
 
-        for (let i = 0; i < gameState.players[player.ID].placedCount; i++) 
+        for (let i = 0; i < gameState.players[playerID].placedCount; i++) 
         {
-            mutation.mutate({ row: x + i, col: y });
+            mutation.mutate({ row: x + i, col: y, gameCode: RealGameCode });
 
         }
   }
 
   let next = 0;
-  if (player.ID !== undefined && gameState.players[player.ID]) {
-    next = gameState.players[player.ID].placedCount - 1;
+  if (playerID !== undefined && gameState.players[playerID]) {
+    next = gameState.players[playerID].placedCount - 1;
+    console.log("updating placecount")
     await updatedPlaceCount();   
 
     console.log(next)
@@ -301,30 +303,8 @@ const OnHandleSelfClick = async (x: number, y: number) => {
 
 
 
-    async function handleSubmit(): Promise<void> {
-        if (!name || !gameCode) {
-            alert("You need both a name and gamecode");
-            return;
-        }
-        setWaitingConnection(true);
-        try {
-            const res = await submitGame({ name, code: gameCode });
-            if (res?.player) {
-            setPlayer(res.player);
-            setConnected(true);
-            console.log("Joined as:", res.player); 
-            }
-            if (res?.gameState) setGameState(res.gameState);
-        } catch (error) {
-            console.log(error)
-            alert("Failed to start game. Please try again.");
-        } finally {
-            setWaitingConnection(false);
-        }
 
-
-        
-}
+    
         function FindSurroundingShips (ri: number, ci: number, Me: boolean): String
         {
 
@@ -334,7 +314,7 @@ const OnHandleSelfClick = async (x: number, y: number) => {
 
             if(Me)
             {
-                ID = player.ID !== undefined ? player.ID : 0;
+                ID = playerID !== undefined ? playerID : 0;
             }
             
   
@@ -360,10 +340,10 @@ const OnHandleSelfClick = async (x: number, y: number) => {
 
   return (
     <>
-      <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-blue-900 via-blue-700 to-blue-400 flex flex-col gap-1 items-center justify-center">
-  <h1 className="text-6xl text-white mb-6 absolute top-3">
-    BattleShip 🚢
-  </h1>
+      <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-blue-900 via-blue-300 to-blue-400 flex flex-col gap-1 items-center justify-center">
+    <h1 className="text-9xl font-bold text-white mb-6 absolute top-10">
+        BattleShip 🚢
+    </h1>
         <audio ref={audioRefPlace} src={place}></audio>
         <audio ref={audioRef} src={MyTurn}></audio>
         <audio ref={audioRefShot} src={shotSound}></audio>
@@ -373,25 +353,11 @@ const OnHandleSelfClick = async (x: number, y: number) => {
 
 
 
-  <h3 className="text-lg font-normal text-white mb-6 absolute top-20 italic">By Nyan</h3>
   <div className="flex flex-col items-end absolute top-3 right-3 gap-2">
 
-    <input
-    type="text"
-    className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
-    placeholder={"Type Name"}
-    onChange={(e) => setName(e.target.value)}
-    value={name}
-    />
-    <input
-    type="text"
-    className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
-    placeholder={"Enter code... "}
-    onChange={(e) => setGameCode(e.target.value === "" ? undefined : Number(e.target.value))}
-    value={gameCode}
-    />
+   
 
-    <button className="px-4 py-2 bg-blue-700 text-white rounded-lg border border-white hover:bg-white hover:text-blue-700" onClick={() => handleSubmit()}>Submit</button>
+
     {waitingConnect && <div className=' text-white'>Waiting for another player...</div>}
 
 
@@ -399,8 +365,8 @@ const OnHandleSelfClick = async (x: number, y: number) => {
   </div>
   <div className={`flex ${rotate ? "flex-col" : "flex-row"} gap-1 ml-2 absolute top-30 left-50`}>
 
-    {player.ID !== undefined && gameState.players[player.ID] &&
-      Array.from({length: gameState.players[player.ID].placedCount}, (_,i) => (
+    {playerID !== undefined && gameState?.players[playerID] &&
+      Array.from({length: gameState.players[playerID].placedCount}, (_,i) => (
         <button
         key={i}
         className={`w-8 h-8 bg-white text-white rounded-xl animate-pulse  ${i === 0 ? "border-5 border-blue-950 bg-blue-950" : "bg-white"}`}
@@ -414,7 +380,7 @@ const OnHandleSelfClick = async (x: number, y: number) => {
 
 </div>
 
-  {gameState.currentPlayer === player.ID && (<div className=" bg-blue-950 p-5 rounded-2xl opacity-100 text-center shadow-lg w-140" style={{ animationDuration: '2s' }}>
+  {gameState.currentPlayer === playerID && (<div className=" bg-blue-950 p-5 rounded-2xl opacity-100 text-center shadow-lg w-140" style={{ animationDuration: '2s' }}>
 
 
 
@@ -422,7 +388,7 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                     <div>
                     
                     <h2 className="text-2xl font-bold mb-2 text-white">Shop</h2>
-                    <div>${player.ID !== undefined ? gameState.players[player.ID].money : ""}</div>
+                    <div>${playerID !== undefined ? gameState.players[playerID].money : ""}</div>
                     </div>
                     <div className='flex flex-row gap-10'>
 
@@ -524,24 +490,24 @@ const OnHandleSelfClick = async (x: number, y: number) => {
 <div className="flex flex-row gap-30 items-end justify-center w-full mt-16 pt-10">
     {/* Player's Ocean Board */}
     <div className="flex flex-col gap-1">
-        {player?.ID !== undefined && gameState.board.oceans[player.ID] ? (
-            gameState.board.oceans[player.ID].map((row, ri) => (
+        {playerID !== undefined && gameState.board.oceans[playerID] ? (
+            gameState.board.oceans[playerID].map((row, ri) => (
                 <div key={ri} className="flex gap-1">
                     {row.map((cell, ci) => (
                         <button
                             key={ci}
                             className={`w-8 h-8 text-white rounded-xl ${
-                                cell === player.ID
+                                cell === playerID
                                     ? "bg-white"
                                     : cell === "Hit" || cell === "Sonar-Hit"
                                     ? "bg-red-500"
-                                    : (player.ID !== undefined && (gameState.board.oceans[player.ID][ri][ci] == "Miss" || gameState.board.oceans[player.ID][ri][ci] == "Sonar"))
+                                    : (playerID !== undefined && (gameState.board.oceans[playerID][ri][ci] == "Miss" || gameState.board.oceans[playerID][ri][ci] == "Sonar"))
                                     ?"bg-blue-900"
                                     :"bg-blue-950"
-                            } ${player.ID !== undefined &&(gameState.board.oceans[player.ID][ri][ci] === "Sonar" || gameState.board.oceans[player.ID][ri][ci] === "Sonar-Hit") ? "border-2" : ""}`}
+                            } ${playerID !== undefined &&(gameState.board.oceans[playerID][ri][ci] === "Sonar" || gameState.board.oceans[playerID][ri][ci] === "Sonar-Hit") ? "border-2" : ""}`}
                             onClick={() => OnHandleSelfClick(ri, ci)}
                         >
-                            {(player.ID !== undefined && gameState.board.oceans[player.ID][ri][ci] === "Sonar" || (player.ID !== undefined && gameState.board.oceans[player.ID][ri][ci] === "Sonar-Hit")) && FindSurroundingShips(ri,ci, true)}
+                            {(playerID !== undefined && gameState.board.oceans[playerID][ri][ci] === "Sonar" || (playerID !== undefined && gameState.board.oceans[playerID][ri][ci] === "Sonar-Hit")) && FindSurroundingShips(ri,ci, true)}
                         </button>
                     ))}
                 </div>
@@ -572,21 +538,21 @@ const OnHandleSelfClick = async (x: number, y: number) => {
     <div className="flex flex-col items-center gap-6 ">
         {/* Ship Placement Info */}
         
-        {connect ? (
-            <div className="animate-bounce bg-blue-950 p-5 rounded-2xl opacity-100 text-center shadow-lg w-56 mb-35" style={{ animationDuration: '2s' }}>
+        {gameState.state ? (
+            <div className="animate-bounce bg-blue-950 p-5 rounded-2xl opacity-100 text-center shadow-lg w-80 mb-35" style={{ animationDuration: '2s' }}>
 
 
                 {gameState.state !== "Normal" ?
 
-                <div className='text-white'>
-                    {player.ID !== undefined && gameState.players[player.ID]?.placedCount > 0
-                        ? `Place your ${gameState.players[player.ID]?.placedCount} ships`
+                <div className='text-white text-2xl font-bold'>
+                    {playerID !== undefined && gameState.players[playerID]?.placedCount > 0
+                        ? `Place your ${gameState.players[playerID]?.placedCount} ships`
                         : "All ships placed!"}
                 </div>
 
 
-                    : <div className='text-white'>
-                    {player.ID !== undefined && gameState.currentPlayer == player.ID ? "Your turn!" : "It's your enemies turn!"}
+                    : <div className='text-white text-2xl font-bold'>
+                    {playerID !== undefined && gameState.currentPlayer == playerID ? "Your turn!" : "It's your enemies turn!"}
                         
                 </div>}
             </div>
@@ -608,14 +574,14 @@ const OnHandleSelfClick = async (x: number, y: number) => {
 
     {/* Opponent's Ocean Board */}
     <div className="flex flex-col gap-1">
-        {player?.ID !== undefined && gameState.board.oceans[player.ID === 0 ? 1 : 0] ? (
-            gameState.board.oceans[player.ID === 0 ? 1 : 0].map((row, ri) => (
+        {playerID !== undefined && gameState.board.oceans[playerID === 0 ? 1 : 0] ? (
+            gameState.board.oceans[playerID === 0 ? 1 : 0].map((row, ri) => (
                 <div key={ri} className="flex gap-1">
                     {row.map((cell, ci) => (
                         <button
                             key={ci}
                             onClick={() => {
-                                if (gameState.currentPlayer === player.ID) {
+                                if (gameState.currentPlayer === playerID) {
                                     handleShoot(ri, ci);
                                 } else {
                                     console.log("nope");
@@ -623,22 +589,22 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                             }}
                             className={`w-8 h-8 ${
                                 
-                                gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Miss"
+                                gameState.board.oceans[playerID === 0 ? 1 : 0][ri][ci] === "Miss"
                                     ? "bg-gray-500"
-                                    : gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Hit"
+                                    : gameState.board.oceans[playerID === 0 ? 1 : 0][ri][ci] === "Hit"
                                     ? "bg-orange-800"
-                                    : gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Air"
+                                    : gameState.board.oceans[playerID === 0 ? 1 : 0][ri][ci] === "Air"
                                     ? "bg-blue-900"
-                                    : gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Sonar"
+                                    : gameState.board.oceans[playerID === 0 ? 1 : 0][ri][ci] === "Sonar"
                                     ? "border-2 border-white bg-gray-500"
-                                    : gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Sonar-Hit"
+                                    : gameState.board.oceans[playerID === 0 ? 1 : 0][ri][ci] === "Sonar-Hit"
                                     ? "border-2 border- bg-orange-800"
                                     : "bg-blue-900"
 
 
-                            } opacity-60 text-white rounded-xl ${gameState.currentPlayer === player.ID && "hover:border-2"}`}
+                            } opacity-60 text-white rounded-xl ${gameState.currentPlayer === playerID && "hover:border-2"}`}
                         >
-                            {(gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Sonar" || gameState.board.oceans[player.ID === 0 ? 1 : 0][ri][ci] === "Sonar-Hit") && FindSurroundingShips(ri,ci, false)}
+                            {(gameState.board.oceans[playerID === 0 ? 1 : 0][ri][ci] === "Sonar" || gameState.board.oceans[playerID === 0 ? 1 : 0][ri][ci] === "Sonar-Hit") && FindSurroundingShips(ri,ci, false)}
                         </button>
                     ))}
                 </div>
