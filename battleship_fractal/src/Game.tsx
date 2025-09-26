@@ -363,7 +363,7 @@ const OnHandleSelfClick = async (x: number, y: number) => {
 
       
   </div>
-  <div className={`flex ${rotate ? "flex-col" : "flex-row"} gap-1 ml-2 absolute top-30 left-50`}>
+  <div className={`flex ${rotate ? "flex-col" : "flex-row"} gap-1 ml-2 absolute ${rotate ? "top-40 left-120" : "top-65  left-100"}`}>
 
     {playerID !== undefined && gameState?.players[playerID] &&
       Array.from({length: gameState.players[playerID].placedCount}, (_,i) => (
@@ -380,19 +380,19 @@ const OnHandleSelfClick = async (x: number, y: number) => {
 
 </div>
 
-  {gameState.currentPlayer === playerID && (<div className=" bg-blue-950 p-5 rounded-2xl opacity-100 text-center shadow-lg w-140" style={{ animationDuration: '2s' }}>
+  {gameState.currentPlayer === playerID && (<div className=" bg-blue-950 p-5 rounded-2xl opacity-100 text-center shadow-lg w-140 h-50 mt-3 mb-0" style={{ animationDuration: '2s' }}>
 
 
 
-                <div className='text-white flex flex-col gap-3'>
-                    <div>
+                <div className='text-white flex flex-col gap-3 pt-0 mt-0'>
+                    <div className='flex flex-row items-center gap-3 justify-center pt-0 mt-0'>
                     
-                    <h2 className="text-2xl font-bold mb-2 text-white">Shop</h2>
+                    <h2 className="text-2xl font-bold mb-0 text-white">Shop</h2>
                     <div>${playerID !== undefined ? gameState.players[playerID].money : ""}</div>
                     </div>
                     <div className='flex flex-row gap-10'>
 
-                        <button className={`flex flex-col gap-2 items-center rounded-2xl p-4 w-40 hover:bg-sky-700 ${powerUp=="Sonar" ? "bg-sky-700" : ""}`} onClick={() => 
+                        <button className={`flex flex-col gap-2 items-center rounded-2xl p-3 w-40 hover:bg-sky-700 ${powerUp=="Sonar" ? "bg-sky-700" : ""}`} onClick={() => 
                         { 
                             setRotateTor("|");
                             if(powerUp=="Sonar" ) 
@@ -413,7 +413,7 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                         <p className='text-[20px]'>Sonar</p>
                         <p className='italic text-[10px]'>Detect surrounding ships</p>                
                         </button>
-                        <button className={`flex flex-col gap-2 items-center rounded-2xl p-4 w-40 hover:bg-sky-700 ${powerUp=="Bomb" ? "bg-sky-700" : ""}`} onClick={() => 
+                        <button className={`flex flex-col gap-2 items-center rounded-2xl p-3 w-40 hover:bg-sky-700 ${powerUp=="Bomb" ? "bg-sky-700" : ""}`} onClick={() => 
                         { 
                             setRotateTor("|");
                             if(powerUp=="Bomb") 
@@ -432,7 +432,7 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                             ></div>
 
                         <p className='text-[20px]'>Bomb</p>
-                        <p className='italic text-[10px]'>Destory everything in a one block radius</p>                
+                        <p className='italic text-[10px]'>Destory everything around</p>                
                         </button>
 
 
@@ -487,7 +487,7 @@ const OnHandleSelfClick = async (x: number, y: number) => {
     
     }
 {/* Player's Ocean Board */}
-<div className="flex flex-row gap-30 items-end justify-center w-full mt-16 pt-10">
+<div className="flex flex-row gap-30 items-end justify-center w-full mt-16 pt-1">
     {/* Player's Ocean Board */}
     <div className="flex flex-col gap-1">
         {playerID !== undefined && gameState.board.oceans[playerID] ? (
@@ -502,7 +502,7 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                                     : cell === "Hit" || cell === "Sonar-Hit"
                                     ? "bg-red-500"
                                     : (playerID !== undefined && (gameState.board.oceans[playerID][ri][ci] == "Miss" || gameState.board.oceans[playerID][ri][ci] == "Sonar"))
-                                    ?"bg-blue-900"
+                                    ?"opacity-0"
                                     :"bg-blue-950"
                             } ${playerID !== undefined &&(gameState.board.oceans[playerID][ri][ci] === "Sonar" || gameState.board.oceans[playerID][ri][ci] === "Sonar-Hit") ? "border-2" : ""}`}
                             onClick={() => OnHandleSelfClick(ri, ci)}
@@ -590,7 +590,7 @@ const OnHandleSelfClick = async (x: number, y: number) => {
                             className={`w-8 h-8 ${
                                 
                                 gameState.board.oceans[playerID === 0 ? 1 : 0][ri][ci] === "Miss"
-                                    ? "bg-gray-500"
+                                    ? "opacity-0"
                                     : gameState.board.oceans[playerID === 0 ? 1 : 0][ri][ci] === "Hit"
                                     ? "bg-orange-800"
                                     : gameState.board.oceans[playerID === 0 ? 1 : 0][ri][ci] === "Air"
