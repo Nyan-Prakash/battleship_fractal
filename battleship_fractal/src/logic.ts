@@ -95,11 +95,11 @@ export function hit(
           }
         }
 
-        console.log(numCount);
-        if (numCount == 0) {
+        
+      }
+      if (numCount == 0) {
             newGameState.winner = ID;
         }
-      }
 
       return newGameState;
     }
@@ -114,19 +114,22 @@ export function hit(
 
 
       let numCount = 0;
-      for (let r = 0; r < gameState.board.oceans.length; r++) {
-        for (let c = 0; c < gameState.board.oceans[r].length; c++) {
+      for (let r = 1; r < 10; r++) {
+        for (let c = 1; c < 10; c++) {
           if (typeof newGameState.board.oceans[otherID][r][c] === "number") {
             numCount++;
+            console.log("PlaceX" + r);
+            console.log("PlaceY" + c);
+
           }
         }
 
-        console.log(numCount);
-        if (numCount == 0) {
-            newGameState.winner = ID;
-        }
+        
 
       }
+      if (numCount == 0) {
+            newGameState.winner = ID;
+        }
       
       return newGameState;
     }

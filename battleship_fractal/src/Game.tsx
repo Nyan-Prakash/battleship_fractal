@@ -9,6 +9,8 @@ import MyTurn from "/src/MyTurn.mp3";
 import shotSound from "/src/shot.wav";
 import explosionSound from "/src/explosion.wav";
 import torpedoExplosion from "/src/torpedo_explosion.wav";
+import Confetti from 'react-confetti';
+import victorySound from './victory.mp3';
 
 import {
   emptyOcean,
@@ -58,6 +60,9 @@ function Game({ RealName, RealGameCode, RealID }: GameProps) {
   const audioRefShot = useRef<HTMLAudioElement | null>(null);
   const audioRefExplode = useRef<HTMLAudioElement | null>(null);
   const audioRefTorpExplode = useRef<HTMLAudioElement | null>(null);
+  const audioRefVictory = useRef<HTMLAudioElement | null>(null);
+
+
 
   const play = () => {
     if (audioRef.current) {
@@ -96,6 +101,14 @@ function Game({ RealName, RealGameCode, RealID }: GameProps) {
 
       audioRefTorpExplode.current.currentTime = 0; // restart from beginning
       audioRefTorpExplode.current.play();
+    }
+  };
+  const playVictory = () => {
+    if (audioRefVictory.current) {
+      audioRefVictory.current.volume = 0.1; // set volume (50%)
+
+      audioRefVictory.current.currentTime = 0; // restart from beginning
+      audioRefVictory.current.play();
     }
   };
 
@@ -275,6 +288,7 @@ function Game({ RealName, RealGameCode, RealID }: GameProps) {
   useEffect(() => {
     const interval = setInterval(() => {
       getGame();
+
     }, 100); // 500ms = 0.5s
 
     return () => clearInterval(interval); // cleanup
@@ -366,9 +380,12 @@ function Game({ RealName, RealGameCode, RealID }: GameProps) {
     return String(numShipsDetect);
   }
 
+
   return (
     <>
-      <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-blue-900 via-blue-300 to-blue-400 flex flex-col gap-1 items-center justify-center">
+      <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-blue-900 via-blue-300 to-blue-200 flex flex-col gap-1 items-center justify-center">
+
+        {gameState.winner== playerID && <Confetti></Confetti>}
         <h1 className="text-9xl font-bold text-white mb-6 absolute top-10">
           BattleShip 🚢
         </h1>
@@ -377,37 +394,14 @@ function Game({ RealName, RealGameCode, RealID }: GameProps) {
         <audio ref={audioRefShot} src={shotSound}></audio>
         <audio ref={audioRefExplode} src={explosionSound}></audio>
         <audio ref={audioRefTorpExplode} src={torpedoExplosion}></audio>
+          <audio ref={audioRefVictory} src={victorySound}></audio>
 
         <div className="flex flex-col items-end absolute top-3 right-3 gap-2">
           {waitingConnect && (
             <div className=" text-white">Waiting for another player...</div>
           )}
         </div>
-        <div
-          className={`flex ${
-            rotate ? "flex-col" : "flex-row"
-          } gap-1 ml-2 absolute ${
-            rotate ? "top-25 left-110" : "top-55  left-90"
-          }`}
-        >
-          {playerID !== undefined &&
-            gameState?.players[playerID] &&
-            Array.from(
-              { length: gameState.players[playerID].placedCount },
-              (_, i) => (
-                <button
-                  key={i}
-                  className={`w-8 h-8 bg-white text-white rounded-xl animate-pulse  ${
-                    i === 0
-                      ? "border-5 border-blue-950 bg-blue-950"
-                      : "bg-white"
-                  }`}
-                  style={{ animationDuration: "0.5s" }}
-                  onClick={i === 0 ? () => setRotate(!rotate) : undefined}
-                ></button>
-              )
-            )}
-        </div>
+        
 
         {gameState.currentPlayer === playerID && (
           <div
@@ -449,7 +443,7 @@ function Game({ RealName, RealGameCode, RealID }: GameProps) {
                     ?
                   </div>
 
-                  <p className="text-[20px]">Sonar</p>
+                  <p className="text-[20px]">Sonar - 2</p>
                   <p className="italic text-[10px]">Detect surrounding ships</p>
                 </button>
                 <button
@@ -474,7 +468,7 @@ function Game({ RealName, RealGameCode, RealID }: GameProps) {
                     style={{ animationDuration: "0.5s" }}
                   ></div>
 
-                  <p className="text-[20px]">Bomb</p>
+                  <p className="text-[20px]">Bomb - 5</p>
                   <p className="italic text-[10px]">
                     Destory everything around
                   </p>
@@ -513,7 +507,7 @@ function Game({ RealName, RealGameCode, RealID }: GameProps) {
                     style={{ animationDuration: "0.5s" }}
                   ></div>
 
-                  <p className="text-[20px]">Torpedo</p>
+                  <p className="text-[20px]">Torpedo - 6</p>
                   <p className="italic text-[10px]">Attack a whole row</p>
                 </button>
               </div>
@@ -523,6 +517,32 @@ function Game({ RealName, RealGameCode, RealID }: GameProps) {
         {/* Player's Ocean Board */}
         <div className="flex flex-col sm:flex-row gap-6 sm:gap-40 items-center sm:items-end justify-center w-full mt-8 sm:mt-1 px-2">
           {/* Player's Ocean Board */}
+
+        
+          <div className={`flex flex-col ${!rotate ? "gap-40" : "gap-5"} items-center`}>
+
+            <div
+          className={`flex  gap-1 ${
+            rotate ? "flex-col" : "flex-row"}`}
+        >
+          {playerID !== undefined &&
+            gameState?.players[playerID] &&
+            Array.from(
+              { length: gameState.players[playerID].placedCount },
+              (_, i) => (
+                <button
+                  key={i}
+                  className={`w-8 h-8 bg-white text-white rounded-xl animate-pulse  ${
+                    i === 0
+                      ? "border-5 border-blue-950 bg-blue-950"
+                      : "bg-white"
+                  }`}
+                  style={{ animationDuration: "0.5s" }}
+                  onClick={i === 0 ? () => setRotate(!rotate) : undefined}
+                ></button>
+              )
+            )}
+        </div>
           <div className="flex flex-col gap-1">
             {playerID !== undefined && gameState.board.oceans[playerID] ? (
               gameState.board.oceans[playerID].map((row, ri) => (
@@ -562,6 +582,7 @@ function Game({ RealName, RealGameCode, RealID }: GameProps) {
                   ))}
                 </div>
               ))
+
             ) : (
               <div>
                 <div className="flex flex-col gap-1">
@@ -581,6 +602,7 @@ function Game({ RealName, RealGameCode, RealID }: GameProps) {
               </div>
             )}
           </div>
+          </div>
 
           {/* Info Panel */}
           <div className="flex flex-col items-center gap-6 ">
@@ -588,7 +610,7 @@ function Game({ RealName, RealGameCode, RealID }: GameProps) {
 
             {gameState.state ? (
               <div
-                className={`animate-bounce ${gameState.winner == 99 ? "bg-blue-600" : (gameState.winner == playerID ? "bg-green-600": "bg-red-600")} mb-40 p-5 rounded-2xl opacity-100 text-center shadow-lg w-80 mb-3`}
+                className={`animate-bounce ${gameState.winner == 99 ? "bg-blue-600" : (gameState.winner == playerID ? "bg-green-600": "bg-red-600")} mb-40 p-5 rounded-2xl opacity-100 text-center shadow-xl w-80 mb-3`}
                 style={{ animationDuration: "2s" }}
               >
                 {gameState.state !== "Normal" ? (
@@ -607,7 +629,7 @@ function Game({ RealName, RealGameCode, RealID }: GameProps) {
                   </div>
                 ) : (
                   <div>
-                    <div className="text-white text-2xl font-bold">
+                    <div className="text-white text-2xl font-bold" onClick={() => {gameState.winner == playerID && playVictory()}}>
                       {playerID !== undefined &&
                       gameState.winner == playerID
                         ? "You Win!"

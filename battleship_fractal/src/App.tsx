@@ -129,15 +129,15 @@ function App() {
       {attached ? (
         <Game RealName={""} RealGameCode={gameCode ?? ""} RealID={ID ?? 404} />
       ) : (
-        <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-blue-900 via-blue-300 to-blue-20 flex flex-col gap-1 items-center justify-center">
-          <h1 className="text-8xl text-white mb-6 absolute top-13">
+        <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-blue-900 via-blue-300 to-blue-200 flex flex-col gap-1 items-center justify-center">
+          <h1 className="text-8xl text-white mb-6 absolute top-13 font-bold ">
             BattleShip 🚢
           </h1>
 
           {!waitingConnect ? (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 ">
               <button
-                className="px-4 py-2 bg-blue-400 text-white rounded-lg border border-white hover:bg-white hover:text-blue-700 text-5xl w-100 h-25"
+                className="px-4 py-2 bg-blue-400 text-white rounded-lg border border-white hover:bg-white hover:text-blue-700 text-5xl w-100 h-25  shadow-2xl"
                 onClick={() => handleCreate()}
               >
                 Create game
@@ -146,7 +146,7 @@ function App() {
                 gameStateMap.map((code, idx) => (
                   <button
                     key={code}
-                    className="px-4 py-2 m-2 bg-blue-200 text-blue-900 rounded-lg border border-blue-400 hover:bg-blue-400 hover:text-white"
+                    className="px-4 py-2 m-2 bg-blue-200 text-blue-900 rounded-lg border border-blue-400 hover:bg-blue-400 hover:text-white  shadow-2xl"
                     onClick={() => {
                       handleJoin(code);
                     }}
